@@ -1,0 +1,37 @@
+#!/bin/bash
+#
+# Check if a given commit is in the current branch, based on the subject
+# rather than commit sha1.
+#
+
+if [ "$#" -ne 1 ]; then
+	echo "Usage: stable commit-in-tree <commit sha1>"
+	exit 1
+fi
+
+# Grab the subject, since commit sha1 is different between branches we
+# have to look it up based on subject.
+subj=$(git log -1 --pretty="%s" $1)
+if [ $? -gt 0 ]; then
+	exit 0
+fi
+
+# Let's hope for the best: either no commits, or one commit with the same
+# subject. This should be the case most of the time.
+cursubj=$(git log -1 --format="%s" -F --grep "$subj")
+if [ "$cursubj" = "" ]; then
+	exit 0
+fi
+
+if [ "$cursubj" = "$subj" ]; then
+	exit 1
+fi
+
+# Try and find if there's a commit with given subject the hard way
+for i in $(git log --pretty="%H" -F --grep "$subj"); do
+	cursubj=$(git log -1 --format="%s" $i)
+	if [ "$cursubj" = "$subj" ]; then
+		exit 1
+	fi
+done
+exit 0
