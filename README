@@ -1,0 +1,15 @@
+Stable maintainer tools
+===============================
+
+This set of tools is useful for people who maintain -stable like trees either
+with collaboration with the community, or privately inside their company.
+
+The focus of this tool is sharing the knowledge and work done by multiple
+-stable tree maintainers without creating overhead for each maintainer.
+
+Configuration is simple, and consists of 3 environment variables. For example,
+in my case they are:
+
+export STABLE_MAJ_VER="3" # The major version of the tree I'm maintaining
+export STABLE_MIN_VER="18" # The minor version of the tree I'm maintaining
+export OTHER_STABLE_TREES="stable/linux-3.10.y stable/linux-3.14.y stable/linux-4.1.y stable/linux-4.2.y" # Other -stable trees that live within the same repository.
