@@ -76,3 +76,21 @@ relevant commits marked for stable are in the local branch.
 
 Remove a commit out of the current branch. The user will need to fix merge
 conflicts if such exist after removing that commit.
+
+
+6) stable steal-commits <commit range> [branch]
+
+Goes through every commit in range and:
+
+ - If it has a fixes tag, checks if the patch to be fixed is in the branch.
+ - If it has a version tag, checks whether it applies to our current version.
+
+If either the commit to be fixed isn't in the branch or the version is newer
+than us, we skip the commit. Otherwise, it would try to cherry-pick and
+format the commit message to match the -stable standard. If cherry-picking
+has created conflicts the script would spawn a shell for the user to fix
+the conflicts and commit the changes, resuming by exiting the shell.
+
+This is useful as an automatic first pass to copy commits from another stable
+branch, the result should later be audited for correctness - the main purpose
+is to get the trivial things out of the way.

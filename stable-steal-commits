@@ -1,0 +1,115 @@
+#!/bin/bash
+#
+# Try to grab commits from one stable tree into another, stopping to fix
+# backports if required.
+#
+
+function pick_one {
+
+	# Let's try cherry-picking the given commit first.
+	git cherry-pick --strategy=recursive -Xpatience -x $1 &> /dev/null
+	if [ $? -gt "0" ]; then
+		git reset --hard
+		# That didn't work? Let's try that with every variation of the commit
+		# in other stable trees.
+		for i in $(stable-find-alts $1); do
+			git cherry-pick --strategy=recursive -Xpatience -x $i &> /dev/null
+			if [ $? = "0" ]; then
+				return 0
+			fi
+			git reset --hard
+		done
+
+		# Still no? Let's go back to the original commit and hand it off to
+		# the user.
+		git cherry-pick --strategy=recursive -Xpatience -x $1 &> /dev/null
+	fi
+
+	return $?
+}
+
+function check_relevant {
+	cmt=$1
+	maj=0
+	min=0
+
+	# Let's grab the commit that this commit fixes (if exists (based on the "Fixes:" tag)).
+	fixescmt=`git show $cmt | grep -i "fixes:" | head -n 1 | sed -e 's/^[ \t]*//' | cut -f 2 -d ':' | sed -e 's/^[ \t]*//' | cut -f 1 -d ' '`
+
+	# If this commit fixes anything, but the broken commit isn't in our branch we don't
+	# need this commit either.
+	if [ "$fixescmt" != "" ] && [ "$(stable-commit-in-tree $fixescmt)" = "1" ]; then
+		return 0
+	fi
+
+	# Let's see if there's a version tag in this commit
+	full=$(git show $cmt | grep -i 'stable@vger')
+	full=$(echo ${full##* } | tr -cd '[[:digit:]]._-' | sed 's/]//g' | sed 's/\[//g' | sed 's/\./ /g')
+
+	maj=$(echo $full | awk {"print \$1"})
+	min=$(echo $full | awk {"print \$2"})  
+
+	# Sanity check our extraction
+	if [ "$(echo ${full##* } | grep 'stable' | wc -l)" -gt "0" ]; then
+		return 1
+	fi
+
+	# Sanity check major version
+	if [ "$maj" != "2" ] && [ "$maj" != "3" ] && [ "$maj" != "4" ]; then
+		return 1
+	fi
+
+	# If the version tag is for a major version newer than ours
+	if [ "STABLE_MAJ_VER" -gt "$maj" ]; then
+		return 1
+	fi
+
+	# Or if the overall version is newer than ours
+	if [ "STABLE_MAJ_VER" -eq "$maj" ] && [ "STABLE_MIN_VER" -ge "$min" ]; then
+		return 1
+	fi
+
+	# No version tag, unsure, or version tag is older than ours
+	return 0
+}
+
+function do_one {
+	for i in $(git log --no-merges --format="%H" $1 $2 | tac); do
+		subj=$(git log -1 --format="%s" $i)
+
+		# Let's grab the mainline commit id, this is useful if the version tag
+		# doesn't exist in the commit we're looking at but exists upstream.
+		orig_cmt=$(git log --no-merges --format="%H" -F --grep "$subj" origin/master | tail -n1)
+
+		# If the commit doesn't apply for us, skip it
+		check_relevant $orig_cmt
+		if [ $? -eq "0" ]; then
+			continue
+		fi
+
+		pick_one $i
+		if [ $? -gt 0 ] ; then
+			echo "Cherry pick failed. Fix, commit (or reset) and exit."
+			/bin/sh
+			continue
+		fi
+
+		# If we didn't find the commit upstream then this must be a custom commit
+		# in the given tree - make sure the user checks this commit.
+		if [ "$orig_cmt" = "" ] ; then
+			msg="Custom"
+			orig_cmt=$(git rev-parse HEAD)
+			echo "Custom commit, please double-check!"
+			/bin/sh
+		fi
+		stable-make-pretty $orig_cmt $msg
+	done
+}
+
+if [ "$#" -ne 1 ] && [ "$#" -ne 2 ]; then
+        echo "Usage: stable steal-commits <commit range> [branch]"
+        exit 1
+fi
+
+do_one $1 $2
+
