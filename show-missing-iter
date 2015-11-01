@@ -1,0 +1,15 @@
+#!/bin/bash
+#
+# Show commits which exist in a given range, but don't exist in the current
+# branch.
+#
+#set -x
+
+function show_missing_iter {
+	for i in $(git log --no-merges --format="%H" $1 | tac); do
+		stable-commit-in-tree $i
+		if [ "$?" = "0" ]; then
+			$2 $i
+		fi
+	done
+}
