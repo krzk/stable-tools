@@ -1,0 +1,20 @@
+#! /bin/bash
+#
+# Pretty format a commit message.
+#
+
+if [ "$#" -eq 0 ] || [ "$#" -gt 2 ]; then
+        echo "Usage: stable make-pretty <commit sha1> [message]"
+        exit 1
+fi
+
+cmt=$(git rev-parse $1)
+
+if [ "$2" != "" ]; then
+	msg=$2
+else
+	msg=$cmt
+fi
+
+msg=$(git log -1 --format="%s%n%n[ Upstream commit $msg ]%n%n%b" $cmt)
+git commit -s --amend -m "$msg"

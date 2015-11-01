@@ -42,3 +42,13 @@ Provides a list of commits with the same subject line in other stable branches.
 
 An example use case is to compare backport of a patch with the way other
 maintainers have done it.
+
+
+3) stable make-pretty <commit sha1> [message]
+
+Formats a commit message with the standard stable formatting. The script grabs
+the commit message from the upstream commit and adds a "Upstream version ..."
+tag.
+
+The user can optionally pass a message to be used rather than using the
+upstream commit's message. 
