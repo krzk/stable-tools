@@ -1,0 +1,21 @@
+#!/bin/bash
+#
+# Show all commits with same subject line in the repository.
+#
+
+if [ "$#" -ne 1 ]; then
+	echo "Usage: stable find-alts <commit sha1>"
+	exit 1
+fi
+
+subj=$(git log -1 --pretty="%s" $1)
+if [ $? -gt 0 ]; then
+	exit 1
+fi
+
+for i in $(git log -F --grep "$subj" --format="%H" $OTHER_STABLE_TREES); do
+	cursubj=$(git log -1 --format="%s" $i)
+	if [ "$subj" = "$cursubj" ]; then
+		echo $i
+	fi
+done

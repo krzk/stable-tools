@@ -34,3 +34,11 @@ grepping for a subject line might instead point to a different commit that
 only contains the subject line of the commit we're looking for in it's own
 commit message. In that case, we must do a more expensive search and evaluate
 all commits containing the given subject line.
+
+
+2) stable find-alts <commit sha1>
+
+Provides a list of commits with the same subject line in other stable branches.
+
+An example use case is to compare backport of a patch with the way other
+maintainers have done it.
