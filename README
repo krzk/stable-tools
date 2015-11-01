@@ -51,4 +51,13 @@ the commit message from the upstream commit and adds a "Upstream version ..."
 tag.
 
 The user can optionally pass a message to be used rather than using the
-upstream commit's message. 
+upstream commit's message.
+
+
+4) stable show-missing <commit range>
+
+Show all commits that exist in the provided range but don't exist in the local
+branch. Script is using the comparison described in commit-in-tree.
+
+This is useful to audit the differences between a newly build tree vs
+a different one to verify that all required commits were picked in.
