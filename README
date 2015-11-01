@@ -61,3 +61,12 @@ branch. Script is using the comparison described in commit-in-tree.
 
 This is useful to audit the differences between a newly build tree vs
 a different one to verify that all required commits were picked in.
+
+
+4) stable show-missing-stable <commit range>
+
+Similar to show-missing, but only shows commits that are also marked for
+stable inclusion.
+
+This is useful to run with a mainline commit range to audit that all
+relevant commits marked for stable are in the local branch.

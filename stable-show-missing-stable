@@ -1,0 +1,22 @@
+#!/bin/bash
+#
+# Show commits which exist in a given range, but don't exist in the current
+# branch and are marked for stable.
+#
+
+. show-missing-iter
+
+if [ "$#" -ne 1 ]; then
+        echo "Usage: stable show-missing <commit range>"
+        exit 1
+fi
+
+function stable_print {
+	if [ "$(git show $1 | grep -i 'stable@vger' | wc -l)" -eq 0]
+		return
+	fi
+
+        echo $(git log -1 --oneline $1)
+}
+
+show_missing_iter $1 stable_print
