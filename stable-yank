@@ -1,0 +1,28 @@
+#!/bin/bash
+#
+# Yank a given commit out of the current branch
+#
+
+if [ "$#" -ne 1 ]; then
+        echo "Usage: stable yank <commit sha1>"
+        exit 1
+fi
+
+# Grab the commit sha1 for the commits before and after the commit we want
+# to yank out, we'll just move them together to yank out the commit we want
+# to remove.
+location=$(git log --pretty="%H" | grep -m1 -C1 $1)
+if [ "$location" = "" ]; then
+	return
+fi
+
+after=$(echo $location | awk {'print $1'})
+before=$(echo $location | awk {'print $3'})
+
+# Topmost commit?
+if [ "$before" = "" ]
+	git reset --hard HEAD^
+	exit
+fi
+
+git rebase --onto $before $after^

@@ -70,3 +70,9 @@ stable inclusion.
 
 This is useful to run with a mainline commit range to audit that all
 relevant commits marked for stable are in the local branch.
+
+
+5) stable yank <commit sha1>
+
+Remove a commit out of the current branch. The user will need to fix merge
+conflicts if such exist after removing that commit.
