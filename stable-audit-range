@@ -1,0 +1,42 @@
+#!/bin/bash
+
+. show-missing-iter
+
+function handle_stable {
+	others=$(stable find-alts $1)
+	if [ "$others" != "" ]; then
+		printf "Commit \"%s\" marked for stable and exists in the following branches:\n" "$(git log -1 --oneline $1)"
+		for j in $others; do
+			echo $(git branch -a --contains $j | sed 's/remotes\///g')
+		done
+	else
+		printf "Commit \"%s\" marked for stable but doesn't exist in any other branch\n" "$(git log -1 --oneline $1)"
+	fi
+	echo ""
+}
+
+function handle_nonstable {
+	others=$(stable find-alts $1)
+	if [ "$others" != "" ]; then
+		printf "Commit \"%s\" isn't marked for stable but exists in the following branches:\n" "$(git log -1 --oneline $1)"
+		for j in $others; do
+			echo $(git branch -a --contains $j | sed 's/remotes\///g')
+		done
+		echo ""
+	fi
+}
+
+function do_one {
+	if [ "$(git show $1 | grep -i 'stable@vger' | wc -l)" -gt 0 ]; then
+		handle_stable $1
+	else
+		handle_nonstable $1
+	fi
+}
+
+if [ "$#" -ne 1 ]; then
+        echo "Usage: stable audit-range <commit range>"
+        exit 1
+fi
+
+show_missing_iter $1 do_one

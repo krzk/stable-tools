@@ -94,3 +94,13 @@ the conflicts and commit the changes, resuming by exiting the shell.
 This is useful as an automatic first pass to copy commits from another stable
 branch, the result should later be audited for correctness - the main purpose
 is to get the trivial things out of the way.
+
+
+7) stable audit-range <commit range>
+
+Provides a human readable output comparing the commit range with the current
+branch. This is a simple way to find out about commits not in current branch
+and:
+
+ - Tagged for stable and which other stable branches they are present in.
+ - Not tagged for stable, but are present in other stable branches.
