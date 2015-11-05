@@ -104,3 +104,15 @@ and:
 
  - Tagged for stable and which other stable branches they are present in.
  - Not tagged for stable, but are present in other stable branches.
+
+
+8) stable deps <commit sha1>
+
+Build a list of dependencies to apply the provided commit cleanly.
+
+This is useful when looking into whether a commit should be backported to the
+current branch, and if so, which commits does it depend on.
+
+Once the dependency list is provided, it should be easy to decide whether the
+commits should be pulled in as well, or whether the commit should be backported
+by small changes to the commit itself (or both).
