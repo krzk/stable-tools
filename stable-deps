@@ -4,7 +4,14 @@
 # branch.
 #
 
+maxdeps=$2
+
 function handle_one {
+	((maxdeps--))
+	if [ $maxdeps -eq 0 ]; then
+		exit
+	fi
+
 	stable commit-in-tree $1
 	if [ $? -eq 1 ]; then
 		return
