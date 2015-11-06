@@ -9,6 +9,12 @@ if [ "$#" -ne 1 ]; then
 	exit 1
 fi
 
+fullhash=$(git rev-parse $1)
+# Hope for the best, same commit is/isn't in the current branch
+if [ "$(git merge-base $fullhash HEAD)" = "$fullhash" ]; then
+	exit 1
+fi
+
 # Grab the subject, since commit sha1 is different between branches we
 # have to look it up based on subject.
 subj=$(git log -1 --pretty="%s" $1)
@@ -16,19 +22,8 @@ if [ $? -gt 0 ]; then
 	exit 0
 fi
 
-# Let's hope for the best: either no commits, or one commit with the same
-# subject. This should be the case most of the time.
-cursubj=$(git log -1 --format="%s" -F --grep "$subj")
-if [ "$cursubj" = "" ]; then
-	exit 0
-fi
-
-if [ "$cursubj" = "$subj" ]; then
-	exit 1
-fi
-
 # Try and find if there's a commit with given subject the hard way
-for i in $(git log --pretty="%H" -F --grep "$subj"); do
+for i in $(git log --pretty="%H" -F --grep "$subj" $STABLE_BASE..HEAD); do
 	cursubj=$(git log -1 --format="%s" $i)
 	if [ "$cursubj" = "$subj" ]; then
 		exit 1
