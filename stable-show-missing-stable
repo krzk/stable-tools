@@ -12,7 +12,7 @@ if [ "$#" -ne 1 ]; then
 fi
 
 function stable_print {
-	if [ "$(git show $1 | grep -i 'stable@vger' | wc -l)" -eq 0]
+	if [ "$(git show $1 | grep -i 'stable@vger' | wc -l)" -eq 0 ]; then
 		return
 	fi
 
