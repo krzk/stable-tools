@@ -2,26 +2,59 @@
 
 . show-missing-iter
 
+function applies {
+	git cherry-pick $1 &> /dev/null
+	if [ $? -eq 0 ]; then
+		echo "+"
+		git reset --hard HEAD^ &> /dev/null
+	else
+		echo "-"
+		git reset --hard &> /dev/null
+	fi
+}
+
 function handle_stable {
 	others=$(stable find-alts $1)
+	app=$(applies $1)
 	if [ "$others" != "" ]; then
-		printf "Commit \"%s\" marked for stable and exists in the following branches:\n" "$(git log -1 --oneline $1)"
-		for j in $others; do
-			echo $(git branch -a --contains $j | sed 's/remotes\///g')
+		printf "[E$app] %s\n" "$(git log -1 --oneline $1)"
+		subj=$(git log -1 --pretty="%s" $1)
+		for m in $OTHER_STABLE_TREES; do
+			if [ $(git log -F --grep "$subj" --format="%H" $m) ]; then
+				echo "	"$m
+			fi
 		done
+
+		if [ "$app" = "-" ]; then
+			echo "Possible dependency chain:"
+			stable deps $1 10 | sed 's/^/      /'
+		fi
+		echo ""
 	else
-		printf "Commit \"%s\" marked for stable but doesn't exist in any other branch\n" "$(git log -1 --oneline $1)"
+		printf "[M$app] %s\n" "$(git log -1 --oneline $1)"
+		if [ "$app" = "-" ]; then
+			echo "Possible dependency chain:"
+			stable deps $1 10 | sed 's/^/      /'
+			echo
+		fi
 	fi
-	echo ""
 }
 
 function handle_nonstable {
 	others=$(stable find-alts $1)
 	if [ "$others" != "" ]; then
-		printf "Commit \"%s\" isn't marked for stable but exists in the following branches:\n" "$(git log -1 --oneline $1)"
-		for j in $others; do
-			echo $(git branch -a --contains $j | sed 's/remotes\///g')
+		app=$(applies $1)
+		printf "[N$app] %s:\n" "$(git log -1 --oneline $1)"
+		subj=$(git log -1 --pretty="%s" $1)
+		for m in $OTHER_STABLE_TREES; do
+			if [ $(git log -F --grep "$subj" --format="%H" $m) ]; then
+				echo "	"$m
+			fi
 		done
+		if [ "$app" = "-" ]; then
+			echo "Possible dependency chain:"
+			stable deps $1 10 | sed 's/^/	/'
+		fi
 		echo ""
 	fi
 }
