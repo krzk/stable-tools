@@ -108,7 +108,7 @@ and:
  - Not tagged for stable, but are present in other stable branches.
 
 
-8) stable deps <commit sha1>
+8) stable deps <commit sha1> [Max deps to show]
 
 Build a list of dependencies to apply the provided commit cleanly.
 
