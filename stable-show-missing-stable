@@ -7,7 +7,7 @@
 . show-missing-iter
 
 if [ "$#" -ne 1 ]; then
-        echo "Usage: stable show-missing <commit range>"
+        echo "Usage: stable show-missing-stable <commit range>"
         exit 1
 fi
 
