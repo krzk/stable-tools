@@ -118,3 +118,9 @@ current branch, and if so, which commits does it depend on.
 Once the dependency list is provided, it should be easy to decide whether the
 commits should be pulled in as well, or whether the commit should be backported
 by small changes to the commit itself (or both).
+
+
+9) stable insert <before sha1> <commit sha1>
+
+Inserts the commit before the "before" commit. Useful to insert in forgotted
+dependencies.
