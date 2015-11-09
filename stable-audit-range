@@ -1,6 +1,14 @@
 #!/bin/bash
 
 . show-missing-iter
+. common
+
+function relevant {
+	check_relevant $1
+	if [ $? -eq 0 ]; then
+		echo R
+	fi
+}
 
 function applies {
 	git cherry-pick $1 &> /dev/null
@@ -13,49 +21,52 @@ function applies {
 	fi
 }
 
+function show_deps {
+	app=$1
+	commit=$2
+
+	if [ "$app" = "-" ]; then
+		echo "Possible dependency chain:"
+		stable deps $commit 10 | sed 's/^/	/'
+		if [ $? -eq 1 ]; then
+			echo "	"[...]
+		fi
+	fi
+}
+
+function find_owning_branch {
+	subj=$(git log -1 --pretty="%s" $1)
+	for m in $OTHER_STABLE_TREES; do
+		if [ $(git log -F --grep "$subj" --format="%H" $m) ]; then
+			echo "	"$m
+		fi
+	done
+}
+
 function handle_stable {
 	others=$(stable find-alts $1)
 	app=$(applies $1)
+	relevant=$(relevant $1)
 	if [ "$others" != "" ]; then
-		printf "[E$app] %s\n" "$(git log -1 --oneline $1)"
-		subj=$(git log -1 --pretty="%s" $1)
-		for m in $OTHER_STABLE_TREES; do
-			if [ $(git log -F --grep "$subj" --format="%H" $m) ]; then
-				echo "	"$m
-			fi
-		done
-
-		if [ "$app" = "-" ]; then
-			echo "Possible dependency chain:"
-			stable deps $1 10 | sed 's/^/      /'
-		fi
-		echo ""
+		printf "[E$app$relevant] %s\n" "$(git log -1 --oneline $1)"
+		find_owning_branch $1
+		show_deps $app $1
 	else
-		printf "[M$app] %s\n" "$(git log -1 --oneline $1)"
-		if [ "$app" = "-" ]; then
-			echo "Possible dependency chain:"
-			stable deps $1 10 | sed 's/^/      /'
-			echo
-		fi
+		printf "[M$app$relevant] %s\n" "$(git log -1 --oneline $1)"
+		show_deps $app $1
 	fi
+	echo
 }
 
 function handle_nonstable {
 	others=$(stable find-alts $1)
 	if [ "$others" != "" ]; then
 		app=$(applies $1)
-		printf "[N$app] %s:\n" "$(git log -1 --oneline $1)"
-		subj=$(git log -1 --pretty="%s" $1)
-		for m in $OTHER_STABLE_TREES; do
-			if [ $(git log -F --grep "$subj" --format="%H" $m) ]; then
-				echo "	"$m
-			fi
-		done
-		if [ "$app" = "-" ]; then
-			echo "Possible dependency chain:"
-			stable deps $1 10 | sed 's/^/	/'
-		fi
-		echo ""
+		relevant=$(relevant $1)
+		printf "[N$app$relevant] %s:\n" "$(git log -1 --oneline $1)"
+		find_owning_branch $1
+		show_deps $app $1
+		echo
 	fi
 }
 
