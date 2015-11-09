@@ -1,0 +1,20 @@
+#!/bin/bash
+
+if [ $# -ne 2 ]; then
+	echo "Usage: stable insert <before sha1> <commit sha1>"
+	exit 1
+fi
+
+before=$1
+after=$(git rev-parse $before^)
+curhead=$(git rev-parse HEAD)
+
+git reset --hard $after
+git cherry-pick $2
+if [ $? -gt 0 ]; then
+	echo "Pick failed: fix, commit and exit"
+	/bin/sh
+else
+	stable make-pretty $2
+fi
+git cherry-pick $after..$curhead
