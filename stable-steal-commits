@@ -11,12 +11,16 @@ function pick_one {
 	# Let's try cherry-picking the given commit first.
 	git cherry-pick --strategy=recursive -Xpatience -x $1 &> /dev/null
 	if [ $? -gt "0" ]; then
+		if [ $(git status -uno --porcelain | wc -l) -eq 0 ]; then
+			git reset --hard
+			return 1
+		fi
 		git reset --hard
 		# That didn't work? Let's try that with every variation of the commit
 		# in other stable trees.
 		for i in $(stable-find-alts $1); do
 			git cherry-pick --strategy=recursive -Xpatience -x $i &> /dev/null
-			if [ $? = "0" ]; then
+			if [ $? -eq 0 ]; then
 				return 0
 			fi
 			git reset --hard
@@ -38,6 +42,11 @@ function do_one {
 		# doesn't exist in the commit we're looking at but exists upstream.
 		orig_cmt=$(git log --no-merges --format="%H" -F --grep "$subj" origin/master | tail -n1)
 
+		stable commit-in-tree $orig_cmt
+		if [ $? -eq 1 ]; then
+			continue
+		fi
+
 		# If the commit doesn't apply for us, skip it
 		check_relevant $orig_cmt
 		if [ $? -eq "0" ]; then
@@ -46,8 +55,13 @@ function do_one {
 
 		pick_one $i
 		if [ $? -gt 0 ] ; then
+			if [ $(git status -uno --porcelain | wc -l) -eq 0 ]; then
+				git reset --hard
+				continue
+			fi
 			echo "Cherry pick failed. Fix, commit (or reset) and exit."
-			/bin/sh
+			stable deps $i 10
+			/bin/bash
 			continue
 		fi
 
@@ -57,7 +71,7 @@ function do_one {
 			msg="Custom"
 			orig_cmt=$(git rev-parse HEAD)
 			echo "Custom commit, please double-check!"
-			/bin/sh
+			/bin/bash
 		fi
 		stable-make-pretty $orig_cmt $msg
 	done
