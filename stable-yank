@@ -20,7 +20,7 @@ after=$(echo $location | awk {'print $1'})
 before=$(echo $location | awk {'print $3'})
 
 # Topmost commit?
-if [ "$before" = "" ]
+if [ "$before" = "" ]; then
 	git reset --hard HEAD^
 	exit
 fi
