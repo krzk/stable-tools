@@ -35,21 +35,21 @@ function pick_one {
 }
 
 function do_one {
-	for i in $(git log --no-merges --format="%H" $1 $2 | tac); do
+	for i in $(git log --no-merges --format="%H" --grep 'stable@vger' $1 $2 | tac); do
 		subj=$(git log -1 --format="%s" $i)
 
 		# Let's grab the mainline commit id, this is useful if the version tag
 		# doesn't exist in the commit we're looking at but exists upstream.
-		orig_cmt=$(git log --no-merges --format="%H" -F --grep "$subj" origin/master | tail -n1)
-
-		stable commit-in-tree $orig_cmt
-		if [ $? -eq 1 ]; then
-			continue
-		fi
+		orig_cmt=$(git log --no-merges --format="%H" -F --grep "$subj" $STABLE_BASE..origin/master | tail -n1)
 
 		# If the commit doesn't apply for us, skip it
 		check_relevant $orig_cmt
 		if [ $? -eq "0" ]; then
+			continue
+		fi
+
+		stable commit-in-tree $orig_cmt
+		if [ $? -eq 1 ]; then
 			continue
 		fi
 
