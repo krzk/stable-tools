@@ -35,7 +35,8 @@ function pick_one {
 }
 
 function do_one {
-	for i in $(git log --no-merges --format="%H" --grep 'stable@vger' $1 $2 | tac); do
+#	for i in $(git log --no-merges --format="%H" --grep 'stable@vger' $1 $2 | tac); do
+	for i in $(git log --no-merges --format="%H" $1 $2 | tac); do
 		subj=$(git log -1 --format="%s" $i)
 
 		# Let's grab the mainline commit id, this is useful if the version tag
@@ -60,7 +61,7 @@ function do_one {
 				continue
 			fi
 			echo "Cherry pick failed. Fix, commit (or reset) and exit."
-			stable deps $i 10
+			stable deps $i 20
 			/bin/bash
 			continue
 		fi
