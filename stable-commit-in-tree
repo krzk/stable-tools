@@ -10,6 +10,12 @@ if [ "$#" -ne 1 ]; then
 fi
 
 fullhash=$(git rev-parse $1)
+# This might happen if someone pointed to a commit that doesn't exist in our
+# tree.
+if [ "$?" -gt "0" ]; then
+	exit 1
+fi
+
 # Hope for the best, same commit is/isn't in the current branch
 if [ "$(git merge-base $fullhash HEAD)" = "$fullhash" ]; then
 	exit 1
