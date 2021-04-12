@@ -6,7 +6,7 @@ function check_relevant {
 	min=0
 
 	# Let's grab the commit that this commit fixes (if exists (based on the "Fixes:" tag)).
-	fixescmt=`git log -1 $cmt | grep -i "fixes:" | head -n 1 | sed -e 's/^[ \t]*//' | cut -f 2 -d ':' | sed -e 's/^[ \t]*//' | cut -f 1 -d ' '`
+	fixescmt=`git log -1 $cmt | grep -i "^    fixes:" | head -n 1 | sed -e 's/^[ \t]*//' | cut -f 2 -d ':' | sed -e 's/^[ \t]*//' | cut -f 1 -d ' '`
 
 	# If this commit fixes anything, but the broken commit isn't in our branch we don't
 	# need this commit either.
@@ -32,7 +32,7 @@ function check_relevant {
 	fi
 
 	# Sanity check major version
-	if [ "$maj" != "2" ] && [ "$maj" != "3" ] && [ "$maj" != "4" ]; then
+	if [ "$maj" != "2" ] && [ "$maj" != "3" ] && [ "$maj" != "4" ] && [ "$maj" != "5" ]; then
 		return 1
 	fi
 
