@@ -5,11 +5,17 @@
 #
 #set -x
 
+function do_one() {
+	stable-commit-in-tree $1
+	if [ "$?" = "0" ]; then
+		$2 $1
+	fi
+}
+
 function show_missing_iter {
 	for i in $(git log --no-merges --format="%H" $1 | tac); do
-		stable-commit-in-tree $i
-		if [ "$?" = "0" ]; then
-			$2 $i
-		fi
+		do_one $i $2 &
+		sleep 1
+		if [ $(ps aux | grep git | wc -l) -gt 10 ]; then sleep 1; fi
 	done
 }
