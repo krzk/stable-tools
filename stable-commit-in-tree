@@ -13,7 +13,7 @@ fullhash=$(git rev-parse $1)
 # This might happen if someone pointed to a commit that doesn't exist in our
 # tree.
 if [ "$?" -gt "0" ]; then
-	exit 1
+	exit 0
 fi
 
 # Hope for the best, same commit is/isn't in the current branch
@@ -28,8 +28,11 @@ if [ $? -gt 0 ]; then
 	exit 0
 fi
 
+STABLE_MAJ_VER=$(grep VERSION Makefile | head -n1 | awk {'print $3'})
+STABLE_MIN_VER=$(grep PATCHLEVEL Makefile | head -n1 | awk {'print $3'})
+
 # Try and find if there's a commit with given subject the hard way
-for i in $(git log --pretty="%H" -F --grep "$subj" $STABLE_BASE..HEAD); do
+for i in $(git log --pretty="%H" -F --grep "$subj" v$STABLE_MAJ_VER.$STABLE_MIN_VER..HEAD); do
 	cursubj=$(git log -1 --format="%s" $i)
 	if [ "$cursubj" = "$subj" ]; then
 		exit 1
