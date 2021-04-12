@@ -28,30 +28,89 @@ function pick_one {
 
 		# Still no? Let's go back to the original commit and hand it off to
 		# the user.
-		git cherry-pick --strategy=recursive -Xpatience -x $1 &> /dev/null
+		git cherry-pick -x $1 &> /dev/null
 	fi
 
 	return $?
 }
 
-function do_one {
-#	for i in $(git log --no-merges --format="%H" --grep 'stable@vger' $1 $2 | tac); do
-	for i in $(git log --no-merges --format="%H" $1 $2 | tac); do
-		subj=$(git log -1 --format="%s" $i)
+function do_dep {
+	cmt=$1
+#return
+	STABLE_MAJ_VER=$(grep VERSION Makefile | head -n1 | awk {'print $3'})
+	STABLE_MIN_VER=$(grep PATCHLEVEL Makefile | head -n1 | awk {'print $3'})
 
+	if [ $(cat ~/deps/v$STABLE_MAJ_VER.$STABLE_MIN_VER/$cmt | wc -l) -gt 10 ]; then
+		return
+	fi
+#/bin/bash
+	echo -e "FAILED: $(git ol $cmt)\n\n" > ~/deps-list
+	oldhead=$(git branch --show-current)
+	if [ "$oldhead" == "" ]; then
+		oldhead=$(git rev-parse HEAD)
+	fi
+	git branch -D tmp-merge-triangle
+	git checkout -b tmp-merge-triangle
+	for i in $(cat ~/deps/v$STABLE_MAJ_VER.$STABLE_MIN_VER/$cmt | awk {'print $1'} | tac); do
+		if [ $(git show $i | grep '^Merge: ' | wc -l) -gt 0 ]; then
+			continue
+		fi
+		cur=$(git rev-parse HEAD)
+		stable steal-commits-nodeps $i^..$i
+		if [ "$(git rev-parse HEAD)" == "$cur" ]; then
+			stat="FAILED"
+		else
+			stat="OK"
+		fi
+		echo "$(git ol $i) - $stat" >> ~/deps-list
+	done
+	echo "Pausing for deps review..."
+	git checkout $oldhead
+	git merge --no-ff -F ~/deps-list tmp-merge-triangle
+	git branch -D tmp-merge-triangle
+#	/bin/bash
+}
+
+function do_one {
+#	for i in $(git log --no-merges --format="%H" -i --grep 'cc:.*stable' $1 | tac); do
+#	for i in $(git log --no-merges --format="%H" -i --grep 'cc:.*stable' --grep 'fixes:' $1 | tac); do
+#	for i in $(git log --no-merges --format="%H" --invert-grep --grep 'stable@' $1 $2 | tac); do
+#	for i in $(git log --no-merges --format="%H" --invert-grep -i --grep 'cc:.*stable' --grep "fixes:" $1 $2 | tac); do
+	for i in $(git log --no-merges --format="%H" $1 $2 | tac); do
+#	for i in $(git log --no-merges --format="%H" -i --grep 'Fixes:' $1 $2 | tac); do
+#		if [ $(git show $i | grep -i "cc:.*stable" | wc -l) -gt 0 ]; then
+#			continue
+#		fi
+#	for i in $(git log --no-merges --format="%H" -i --grep 'Fixes:' $1 $2 | tac); do
+		subj=$(git log -1 --format="%s" $i)
 		# Let's grab the mainline commit id, this is useful if the version tag
 		# doesn't exist in the commit we're looking at but exists upstream.
-		orig_cmt=$(git log --no-merges --format="%H" -F --grep "$subj" $STABLE_BASE..origin/master | tail -n1)
+		STABLE_MAJ_VER=$(grep VERSION Makefile | head -n1 | awk {'print $3'})
+		STABLE_MIN_VER=$(grep PATCHLEVEL Makefile | head -n1 | awk {'print $3'})
 
+		for ss in $(git log --no-merges --format="%H" -F --grep "$subj" v$STABLE_MAJ_VER.$STABLE_MIN_VER..origin/master); do
+			newsub=$(git log -1 --format="%s" $ss)
+			if [ "$newsub" == "$subj" ]; then
+				orig_cmt=$ss
+			fi
+		done
+#orig_cmt=$i
 		# If the commit doesn't apply for us, skip it
 		check_relevant $orig_cmt
 		if [ $? -eq "0" ]; then
+			echo "This commits not relevant!"
 			continue
 		fi
 
 		stable commit-in-tree $orig_cmt
 		if [ $? -eq 1 ]; then
+			echo "This commit already in tree!"
 			continue
+		fi
+
+		if [ "$(git notes show $orig_cmt 2> /dev/null | wc -l)" -gt 0 ]; then
+			git notes show $orig_cmt
+			/bin/bash
 		fi
 
 		pick_one $i
@@ -61,8 +120,9 @@ function do_one {
 				continue
 			fi
 			echo "Cherry pick failed. Fix, commit (or reset) and exit."
-			stable deps $i 20
-			/bin/bash
+			git cherry-pick --quit; git reset --hard
+			do_dep $orig_cmt
+			echo $orig_cmt $STABLE_MAJ_VER.$STABLE_MIN_VER >> ~/failed
 			continue
 		fi
 
