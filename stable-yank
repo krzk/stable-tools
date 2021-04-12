@@ -25,4 +25,4 @@ if [ "$before" = "" ]; then
 	exit
 fi
 
-git rebase --onto $before $after^
+git rebase -r --onto $before $after^
