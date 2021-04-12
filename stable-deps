@@ -5,28 +5,18 @@
 #
 
 if [ $# -ne 1 ] && [ $# -ne 2 ]; then
-	echo "Usage: stable deps <commit sha1> [Max deps to show]"
+	echo "Usage: stable deps <commit sha1>"
 	exit 1
 fi
 
-maxdeps=$2
+STABLE_MAJ_VER=$(grep VERSION Makefile | head -n1 | awk {'print $3'})
+STABLE_MIN_VER=$(grep PATCHLEVEL Makefile | head -n1 | awk {'print $3'})
+cmt=$(git rev-parse $1)
 
-function handle_one {
-	((maxdeps--))
-	if [ $maxdeps -eq 0 ]; then
-		exit 1
-	fi
-
-	stable commit-in-tree $1
+for i in $(cat ~/deps/v$STABLE_MAJ_VER.$STABLE_MIN_VER/$cmt | awk {'print $1'}); do
+	stable commit-in-tree $i
 	if [ $? -eq 1 ]; then
-		return
+		continue
 	fi
-
-	echo $1
-	for i in $(stable-deps.py $1); do
-		handle_one $i
-	done
-}
-
-handle_one $1
-exit 0
+	git ol $i
+done
