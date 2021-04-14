@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# Sanity check
+test -n "$SELF_DIR" || exit 1
+
 function check_relevant {
 	cmt=$1
 	maj=0
@@ -11,7 +14,7 @@ function check_relevant {
 	# If this commit fixes anything, but the broken commit isn't in our branch we don't
 	# need this commit either.
 	if [ "$fixescmt" != "" ]; then
-		stable-commit-in-tree $fixescmt
+		"${SELF_DIR}/stable-commit-in-tree" $fixescmt
 		if [ $? -eq 1 ]; then
 			return 1
 		else

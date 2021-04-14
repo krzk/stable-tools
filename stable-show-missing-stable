@@ -4,7 +4,8 @@
 # branch and are marked for stable.
 #
 
-. show-missing-iter
+SELF_DIR="$(dirname "${BASH_SOURCE[0]}")"
+. "${SELF_DIR}/show-missing-iter"
 
 if [ "$#" -ne 1 ]; then
         echo "Usage: stable show-missing-stable <commit range>"

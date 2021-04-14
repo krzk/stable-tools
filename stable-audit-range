@@ -1,7 +1,8 @@
 #!/bin/bash
 
-. show-missing-iter
-. common
+SELF_DIR="$(dirname "${BASH_SOURCE[0]}")"
+. "${SELF_DIR}/show-missing-iter"
+. "${SELF_DIR}/common"
 
 function relevant {
 	check_relevant $1
@@ -27,7 +28,7 @@ function show_deps {
 
 	if [ "$app" = "-" ]; then
 		echo "Possible dependency chain:"
-		stable deps $commit 10 | sed 's/^/	/'
+		"${SELF_DIR}/stable" deps $commit 10 | sed 's/^/	/'
 		if [ $? -eq 1 ]; then
 			echo "	"[...]
 		fi
@@ -44,7 +45,7 @@ function find_owning_branch {
 }
 
 function handle_stable {
-	others=$(stable find-alts $1)
+	others=$("${SELF_DIR}/stable" find-alts $1)
 	app=$(applies $1)
 	relevant=$(relevant $1)
 	if [ "$others" != "" ]; then
@@ -59,7 +60,7 @@ function handle_stable {
 }
 
 function handle_nonstable {
-	others=$(stable find-alts $1)
+	others=$("${SELF_DIR}/stable" find-alts $1)
 	if [ "$others" != "" ]; then
 		app=$(applies $1)
 		relevant=$(relevant $1)

@@ -4,7 +4,8 @@
 # backports if required.
 #
 
-. common
+SELF_DIR="$(dirname "${BASH_SOURCE[0]}")"
+. "${SELF_DIR}/common"
 
 function pick_one {
 
@@ -18,7 +19,7 @@ function pick_one {
 		git reset --hard
 		# That didn't work? Let's try that with every variation of the commit
 		# in other stable trees.
-		for i in $(stable-find-alts $1); do
+		for i in $("${SELF_DIR}/stable-find-alts" $1); do
 			git cherry-pick --strategy=recursive -Xpatience -x $i &> /dev/null
 			if [ $? -eq 0 ]; then
 				return 0
@@ -56,7 +57,7 @@ function do_dep {
 			continue
 		fi
 		cur=$(git rev-parse HEAD)
-		stable steal-commits-nodeps $i^..$i
+		"${SELF_DIR}/stable" steal-commits-nodeps $i^..$i
 		if [ "$(git rev-parse HEAD)" == "$cur" ]; then
 			stat="FAILED"
 		else
@@ -102,7 +103,7 @@ function do_one {
 			continue
 		fi
 
-		stable commit-in-tree $orig_cmt
+		"${SELF_DIR}/stable" commit-in-tree $orig_cmt
 		if [ $? -eq 1 ]; then
 			echo "This commit already in tree!"
 			continue
@@ -134,7 +135,7 @@ function do_one {
 			echo "Custom commit, please double-check!"
 			/bin/bash
 		fi
-		stable-make-pretty $orig_cmt $msg
+		"${SELF_DIR}/stable-make-pretty" $orig_cmt $msg
 	done
 }
 

@@ -1,8 +1,10 @@
 #!/bin/bash
 
+SELF_DIR="$(dirname "${BASH_SOURCE[0]}")"
+
 if [ "$#" -eq 0 ]; then
 	echo "Usage: stable <command name> [args]"
 	exit 1
 fi
 
-stable-$1 "${@:2}"
+"${SELF_DIR}/stable-${1}" "${@:2}"
